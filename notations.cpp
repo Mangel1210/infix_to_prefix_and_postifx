@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <cstdlib>
 #include "utils.h"
 #include "stack.h"
 
@@ -38,7 +39,6 @@ public:
 class Conversions : public Utils{
   
   public:
-    
     using Utils::is_operator;
     using Utils::compare_operator;
     using Utils::is_number;
@@ -47,17 +47,11 @@ class Conversions : public Utils{
     std::vector<char *> infix_to_postfix(std::vector<char *> &v);
   
   private:
-    
-
     short int precedence(char *op);
-    bool is_right_associative(char *op);
     void invert_expr(std::vector<char *> &expr, std::vector<char *> &inv_expr);
     
-    std::vector<char *> shunting_yard(std::vector<char *> &v);
-    
+    std::vector<char *> shunting_yard(std::vector<char *> &v, bool prefix);
     std::vector<char *> invexpr;
-  
-
 };
 
 
@@ -147,18 +141,6 @@ short int Conversions::precedence(char *op){
   }
 }
 
-bool Conversions::is_right_associative(char *op){
-
-  char c;
-
-  c = op[0];
-  
-  if(c == '^') return 1;
-  
-  return 0;
-}
-
-
 void Conversions::invert_expr(std::vector<char *> &expr, std::vector<char *> &inv_expr){
 
   int vlen,i;
@@ -176,7 +158,7 @@ void Conversions::invert_expr(std::vector<char *> &expr, std::vector<char *> &in
   }
 }
 
-std::vector<char *> Conversions::shunting_yard(std::vector<char *> &v){
+std::vector<char *> Conversions::shunting_yard(std::vector<char *> &v, bool prefix){
 
   char *op;
   short int prc_in, prc_top;
@@ -208,13 +190,25 @@ std::vector<char *> Conversions::shunting_yard(std::vector<char *> &v){
     
     if(is_operator(op)){
       if(compare_operator(op, "^")){
-        while(!stk.empty() && !compare_operator(stk.peek(), "(") && precedence(op) < precedence(stk.peek())){
-          conv.push_back(stk.pop());
-          ///Nunca se entra aqui
+        if(prefix){
+          while(!stk.empty() && !compare_operator(stk.peek(), "(") && precedence(op) <= precedence(stk.peek())){
+            conv.push_back(stk.pop()); 
+          }
+          
+        }else {
+          while(!stk.empty() && !compare_operator(stk.peek(), "(") && precedence(op) < precedence(stk.peek())){
+            conv.push_back(stk.pop());
+          }
         }
       }else{
-        while(!stk.empty() && !compare_operator(stk.peek(), "(") && precedence(op) <= precedence(stk.peek())){
-          conv.push_back(stk.pop());
+        if(prefix){
+          while(!stk.empty() && !compare_operator(stk.peek(), "(") && precedence(op) < precedence(stk.peek())){
+            conv.push_back(stk.pop());
+          }
+        }else {
+          while(!stk.empty() && !compare_operator(stk.peek(), "(") && precedence(op) <= precedence(stk.peek())){
+            conv.push_back(stk.pop());
+          }
         }
       }
       
@@ -237,7 +231,7 @@ std::vector<char *> Conversions::infix_to_postfix(std::vector<char *> &v){
   
   std::vector<char *> postfix;
 
-  postfix = shunting_yard(v);
+  postfix = shunting_yard(v, 0);
 
   return postfix;
 }
@@ -248,7 +242,7 @@ std::vector<char *> Conversions::infix_to_sufix(std::vector<char *> &v){
 
   invert_expr(v, invexpr);
 
-  postfix = shunting_yard(invexpr);
+  postfix = shunting_yard(invexpr, 1);
 
   invert_expr(postfix, sufix);
   
@@ -311,21 +305,28 @@ int Evaluate::evaluate_postfix(std::vector<char *> &postfix){
   n_items = postfix.size();
 
   for (i = 0; i < n_items; ++i){
-    stk.show_stack();
-
+    
     out = postfix.at(i);
-
+    
     if(is_number(out)){
       num = str_to_num(out);
       stk.push(num);
-      continue;
+      std::cout << "Next element: " << num << " -> ";
     }
-
+    
     if(is_operator(out)){
       b = stk.pop();
       a = stk.pop();
       res = operation(out, a, b);
       stk.push(res);
+      std::cout << "Next element: " << out << " -> " << a << out << b;
+      std::cout << " -> "<< res << " -> ";
+    }
+    
+    if(stk.empty()){
+      std::cout << "[]" << '\n';  
+    }else{
+      stk.show_stack();
     }
   }
 
@@ -344,23 +345,29 @@ int Evaluate::evaluate_sufix(std::vector<char *> &sufix){
   n_items = sufix.size();
 
   for (i = n_items - 1; i >= 0; i--){
-
-    stk.show_stack();
-
+   
     out = sufix.at(i);
-
+   
     if(is_number(out)){
       num = str_to_num(out);
       stk.push(num);
-      continue;
+      std::cout << "Next element: " << num << " -> ";
     }
-
+   
     if(is_operator(out)){
       a = stk.pop();
       b = stk.pop();
       res = operation(out, a, b);
       stk.push(res);
-    }    
+      std::cout << "Next element: " << out << " -> " << a << out << b;
+      std::cout << " -> "<< res << " -> ";
+    }   
+   
+    if(stk.empty()){
+      std::cout << "[]" << '\n';  
+    }else{
+      stk.show_stack();
+    }
   }
 
   res = stk.pop();
@@ -372,19 +379,18 @@ int Evaluate::evaluate_sufix(std::vector<char *> &sufix){
 
 void main_program(int argc, const char *str){
 
-  int res, opt, in, sol, i;
+  int res, opt, in, sol, i, wait;
   char expr[100];
 
   Conversions conversions;
   Evaluate evaluations;
 
-  res = 1;
-  
+  res = 1; 
   in = 1;
   while(in){
     
     if(res){
-
+      Utils::clear_screen();
       if(argc == 1){
         std::cout << "Ingrese una expresión " << '\n';
         std::cin >> expr;
@@ -419,8 +425,11 @@ void main_program(int argc, const char *str){
     e.set_sufix(prefix);
     e.set_postfix(postfix); 
     
+    opt = 1;
     if(!res){
+      Utils::clear_screen();
       while(1){
+        
         std::cout << "1) Mostrar expresion infija" << '\n';
         std::cout << "2) Mostrar expresion prefija" << '\n';
         std::cout << "3) Mostrar expresion postfija" << '\n';
@@ -428,7 +437,6 @@ void main_program(int argc, const char *str){
         std::cout << "5) Calcular expresion postfija" << '\n';
         std::cout << "6) Ingresar una nueva expresión" << '\n';
         std::cout << "7) Salir" << '\n';
-        std::cin >> opt;
        
         std::cout << '\n';
         if(opt == 1){
@@ -438,14 +446,17 @@ void main_program(int argc, const char *str){
         }else if (opt == 3){
           e.show_postfix();
         }else if (opt == 4){
+          e.show_sufix();
           sol = evaluations.evaluate_sufix(prefix);
-          std::cout << '\n' << "Resultado:" << sol <<'\n';
+          std::cout << '\n' << "Resultado: " << sol <<'\n';
         }else if (opt == 5) {
+          e.show_postfix();
           sol = evaluations.evaluate_postfix(postfix);
-          std::cout << '\n' << "Resultado:" << sol<<'\n';
+          std::cout << '\n' << "Resultado: " << sol<<'\n';
         }else if (opt == 6){
           e.free();
           res = 1;
+          argc = 1;
           break;
         }else if (opt == 7){
           e.free();
@@ -453,6 +464,9 @@ void main_program(int argc, const char *str){
           break;
         }
         std::cout << '\n';
+        std::cout << "->";
+        std::cin >> opt;
+        Utils::clear_screen();
       }  
     }
   }

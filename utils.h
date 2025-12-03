@@ -20,6 +20,8 @@ class Utils{
     static void show_expression(std::vector<char *> &vec);
     
     static int exp(int base, int expo);
+
+    static void clear_screen();
 };
 
 bool Utils::valid_char(char c){
@@ -188,6 +190,10 @@ int Utils::exp(int base, int expo){
   }
 
   return res;
+}
+
+void Utils::clear_screen(){
+  std::cout << "\033[2J\033[1;1H";
 }
 
 #endif
