@@ -42,6 +42,7 @@ class Conversions : public Utils{
     using Utils::is_operator;
     using Utils::compare_operator;
     using Utils::is_number;
+    using Utils::show_vector;
 
     std::vector<char *> infix_to_sufix(std::vector<char *> &v);
     std::vector<char *> infix_to_postfix(std::vector<char *> &v);
@@ -162,13 +163,28 @@ std::vector<char *> Conversions::shunting_yard(std::vector<char *> &v, bool pref
 
   char *op;
   short int prc_in, prc_top;
-  int cond, i;
+  int cond, i, j;
   Stack<char *> stk(10);
   std::vector<char *> conv;
 
   for (i = 0; i < v.size(); ++i) {
     
     op = v.at(i);
+   
+    std::cout << "In expression->";
+    show_vector(v, i, v.size());
+
+    std::cout << "Stack->";
+    if(stk.empty()){
+      std::cout << "[]" << '\n';
+    }else {
+      stk.show_stack();
+    }
+   
+    std::cout << "Expression->";
+    show_vector(conv, 0, conv.size());
+    std::cout << "Next element: "<< op << '\n';
+    std::cout << '\n';
 
     if(is_number(op)){
       conv.push_back(v.at(i));
@@ -216,6 +232,20 @@ std::vector<char *> Conversions::shunting_yard(std::vector<char *> &v, bool pref
       continue;
     }
   }
+  
+  std::cout << "Stack ->";
+  if(stk.empty()){
+    std::cout << "[]" << '\n';
+  }else {
+    stk.show_stack();
+  }
+
+  std::cout << "Expression->[";
+  for (i = 0; i < conv.size(); ++i) {
+    std::cout << conv.at(i);
+  }
+  std::cout << "]" << '\n';
+  std::cout << '\n';
 
   while(!stk.empty()){
     conv.push_back(stk.pop());
@@ -408,6 +438,12 @@ void main_program(int argc, const char *str){
       
       if(!Utils::validate_parenth(expr)){
         std::cout << "Los paréntesis no coinciden"<< '\n';
+        int con;
+        std::cout << "Ingrese 1 para continuar" << '\n';
+        std::cin >> con;
+        if(con != 1){
+          break;
+        }
         continue;
       }
       res = 0;
@@ -442,8 +478,10 @@ void main_program(int argc, const char *str){
         if(opt == 1){
           e.show_infix();
         }else if (opt == 2){
+          conversions.infix_to_sufix(infix);
           e.show_sufix();
         }else if (opt == 3){
+          conversions.infix_to_postfix(infix);
           e.show_postfix();
         }else if (opt == 4){
           e.show_sufix();

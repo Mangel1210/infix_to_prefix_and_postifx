@@ -17,6 +17,7 @@ class Utils{
     static bool is_operator_char(char op);
     static bool validate_parenth(char *expr);
     static void expr_to_vector(const char *expr, std::vector<char *> &vec);
+    static void show_vector(std::vector<char *> &v, int init, int end);
     static void show_expression(std::vector<char *> &vec);
     
     static int exp(int base, int expo);
@@ -111,6 +112,8 @@ bool Utils::validate_parenth(char *expr){
 
   res = stk.empty();
 
+  stk.free_stack();
+
   if(res){
     return 1;
   }
@@ -167,6 +170,17 @@ bool Utils::is_number(char *num){
   }
 
   return 0;
+}
+
+void Utils::show_vector(std::vector<char *> &v, int init, int end){
+  
+  int i;
+  
+  std::cout << "[";
+  for (i = init; i < end; ++i){
+    std::cout << v.at(i);
+  }
+  std::cout << "]" << '\n';
 }
 
 void Utils::show_expression(std::vector<char *> &vec){
